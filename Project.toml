@@ -1,0 +1,10 @@
+name = "DFTatom"
+uuid = "8ebd6edd-a49d-5d0c-9d48-1c79bf3d73a4"
+authors = [
+    "Xuanzhe Xia",
+    " xzxia22@m.fudan.edu.cn",
+]
+version = "0.1.0"
+
+[compat]
+julia = "1.10"

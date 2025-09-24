@@ -1,0 +1,39 @@
+# Changes here will be overwritten by Copier
+AddAllcontributors: false
+AddCitationCFF: false
+AddCodeOfConduct: false
+AddCompatHelperCI: true
+AddContributionDocs: false
+AddCopierCI: false
+AddDependabot: true
+AddDocs: true
+AddDocsCI: true
+AddFormatterAndLinterConfigFiles: true
+AddGitHubPRTemplate: false
+AddGitHubTemplates: false
+AddLintCI: false
+AddLychee: false
+AddMacToCI: false
+AddPrecommit: false
+AddTagBotCI: true
+AddTestCI: true
+AddWinToCI: false
+Authors: Xuanzhe Xia, xzxia22@m.fudan.edu.cn
+AutoIncludeTests: false
+CheckExplicitImports: false
+ConfigIndentation: 2
+JuliaIndentation: 4
+JuliaMinCIVersion: lts
+JuliaMinVersion: '1.10'
+License: MIT
+LicenseCopyrightHolders: Xuanzhe Xia, xzxia22@m.fudan.edu.cn
+MarkdownIndentation: 2
+PackageName: DFTatom
+PackageOwner: hz-xiaxz
+PackageUUID: 8ebd6edd-a49d-5d0c-9d48-1c79bf3d73a4
+RunJuliaNightlyOnCI: false
+StrategyConfirmIncluded: true
+StrategyLevel: 1
+StrategyReviewExcluded: false
+UseCirrusCI: false
+_src_path: /home/hzxiaxz/.julia/packages/BestieTemplate/jdG8v
