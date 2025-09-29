@@ -7,16 +7,7 @@ This document provides specific guidelines for Claude AI when developing this pr
 The project follows the standard Julia package structure:
 
 -   `src/`: Main source code for the project.
-    -   `KagomeDSL.jl`: The main module file.
-    -   `Lattice.jl`: Defines the Kagome lattice structure and connectivity.
-    -   `Hamiltonian.jl`: Code related to defining the physical model (e.g., Heisenberg Hamiltonian).
-    -   `MonteCarlo.jl`: Implementations of the Variational Monte Carlo (VMC) algorithm.
--   `test/`: Project tests.
-    -   `runtests.jl`: The main test runner.
-    -   Tests are organized per file to mirror the `src/` directory structure (e.g., `test-Hamiltonian.jl`).
 -   `docs/`: Documentation sources for the `Documenter.jl`-based website.
--   `scripts/`: Standalone scripts for running simulations and post-processing results. This is the primary way to generate the data found in `data/`.
--   `data/`: For storing simulation results. Raw data is not committed to Git.
 -   `Project.toml` & `Manifest.toml`: Defines project dependencies and their exact versions. (!NEVER EDIT `Project.toml`!)
 
 ## Development Workflow
