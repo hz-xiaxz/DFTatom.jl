@@ -15,3 +15,7 @@ Infiltrator = "1.9.3"
 LinearAlgebra = "1.12.0"
 OMEinsum = "0.9.2"
 julia = "1.10"
+
+[sources]
+GaussianBasis = {rev = "main", url = "https://github.com/FermiQC/GaussianBasis.jl"}
+OMEinsum = {rev = "master", url = "https://github.com/under-Peter/OMEinsum.jl"}
