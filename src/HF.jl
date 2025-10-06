@@ -22,7 +22,7 @@ function one_electron_energy(bset::BasisSet)
     # For a one-electron system, J and K are zero.
     S = overlap(bset)
     # solving the generalized eigenvalue problem
-    evals, evecs = eigen(T + nuc, S)
+    evals, _ = eigen(T + nuc, S)
     return minimum(evals)
 end
 
@@ -69,11 +69,7 @@ This is suitable for atoms or molecules, including open-shell systems. This impl
 """
 function SCF(bset::BasisSet; n_unpaired::Int, maxiter = 100, tol = 1e-6)
     # --- Setup ---
-    # Assuming a neutral system, charge = 0
     n_electrons = sum(atom.Z for atom in bset.atoms)
-    if (n_electrons + n_unpaired) % 2 != 0 || (n_electrons - n_unpaired) < 0
-        error("Invalid number of unpaired electrons. n_electrons and n_unpaired must have the same parity, and n_electrons >= n_unpaired.")
-    end
     N_up = (n_electrons + n_unpaired) ÷ 2
     N_down = (n_electrons - n_unpaired) ÷ 2
 
@@ -132,12 +128,17 @@ function SCF(bset::BasisSet; n_unpaired::Int, maxiter = 100, tol = 1e-6)
             println("SCF converged in $i iterations.")
 
             # Energy calculation
-            E_elec = 0.5 * (tr((P_up_new + P_down_new) * H0) + tr(P_up_new * F_up) + tr(P_down_new * F_down))
-            
+            E_elec =
+                0.5 * (
+                    tr((P_up_new + P_down_new) * H0) +
+                    tr(P_up_new * F_up) +
+                    tr(P_down_new * F_down)
+                )
+
             E_nuc = 0.0
             atoms = bset.mol.atoms
-            for i_atom in 1:length(atoms)
-                for j_atom in (i_atom+1):length(atoms)
+            for i_atom = 1:length(atoms)
+                for j_atom = (i_atom+1):length(atoms)
                     r_ij = norm(atoms[i_atom].xyz - atoms[j_atom].xyz)
                     if r_ij > 1e-8 # Avoid self-interaction if atoms are at the same position
                         E_nuc += atoms[i_atom].Z * atoms[j_atom].Z / r_ij
