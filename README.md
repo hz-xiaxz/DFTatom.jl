@@ -7,3 +7,16 @@
 [![Docs workflow Status](https://github.com/hz-xiaxz/DFTatom.jl/actions/workflows/Docs.yml/badge.svg?branch=main)](https://github.com/hz-xiaxz/DFTatom.jl/actions/workflows/Docs.yml?query=branch%3Amain)
 [![BestieTemplate](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/JuliaBesties/BestieTemplate.jl/main/docs/src/assets/badge.json)](https://github.com/JuliaBesties/BestieTemplate.jl)
 
+# Results
+
+C atom
+
+| Basis   | E (a.u.)      | iteration |
+| ------- | ------------- | --------- |
+| sto-3g  | -37.08958662  | 1         |
+| sto-6g  | -37.46351992  | 1         |
+| 6-31g   | -37.77296923  | 1509      |
+| 6-31g*  | -37.77157376  | 1718      |
+| cc-pvdz | -37.814956174 | 2863      |
+
+
