@@ -46,37 +46,50 @@ function init_conf(bset::BasisSet)
 end
 
 """
-    SCF(bset::BasisSet; n_unpaired::Int, maxiter::Int=100, tol::Float64=1e-6)
+    SCF(
+    bset::BasisSet;
+    N_up::Int,
+    N_down::Int,
+    maxiter::Int = 100,
+    tol::Float64 = 1e-6,
+)
 
 Perform a Unrestricted Hartree-Fock (UHF) self-consistent field calculation.
-This is suitable for atoms or molecules, including open-shell systems. This implementation assumes the system is neutral (charge=0).
+This is suitable for atoms or molecules, including open-shell systems. 
+
+In UHF the Fock matrix writes as:
+```math
+F^α = H_core + J - K^α \\
+
+F^β = H_core + J - K^β
+```
+where
+```math
+J = ∑_{i=1}^{N_α} J_i^α + ∑_{j=1}^{N_β} J_j^β \\
+```
 
 # Arguments
 - `bset::BasisSet`: The basis set for the atom.
-- `n_unpaired::Int`: The number of unpaired electrons. Must have the same parity as the total number of electrons.
+- `N_up::Int`: The number of spin-up electrons.
+- `N_down::Int`: The number of spin-down electrons.
 - `maxiter::Int`: Maximum number of SCF iterations.
 - `tol::Float64`: Convergence tolerance for the density matrix.
 
-# Returns
-- A `NamedTuple` with the following fields:
-  - `energy::Float64`: The total SCF energy (electronic + nuclear repulsion).
-  - `P_up::Matrix{Float64}`: The alpha-spin density matrix.
-  - `P_down::Matrix{Float64}`: The beta-spin density matrix.
-  - `C_up::Matrix{Float64}`: The alpha-spin molecular orbital coefficients.
-  - `C_down::Matrix{Float64}`: The beta-spin molecular orbital coefficients.
-  - `E_up::Vector{Float64}`: The alpha-spin orbital energies.
-  - `E_down::Vector{Float64}`: The beta-spin orbital energies.
+
 """
-function SCF(bset::BasisSet; n_unpaired::Int, maxiter = 100, tol = 1e-6)
-    # --- Setup ---
-    n_electrons = sum(atom.Z for atom in bset.atoms)
-    N_up = (n_electrons + n_unpaired) ÷ 2
-    N_down = (n_electrons - n_unpaired) ÷ 2
+function SCF(
+    bset::BasisSet;
+    N_up::Int,
+    N_down::Int,
+    maxiter::Int = 100,
+    α::Float64 = 0.8, # mixing parameter
+    tol::Float64 = 1e-6,
+)
 
     # Core Hamiltonian (constant)
     T0 = kinetic(bset)
     nuc = nuclear(bset)
-    H0 = T0 + nuc
+    H_core = T0 + nuc
     S = overlap(bset)
     inter = ERI_2e4c(bset)
 
@@ -85,27 +98,29 @@ function SCF(bset::BasisSet; n_unpaired::Int, maxiter = 100, tol = 1e-6)
     C_up = copy(C)
     C_down = copy(C)
 
+    # density matrices
     P_up = C_up[:, 1:N_up] * C_up[:, 1:N_up]'
     P_down = C_down[:, 1:N_down] * C_down[:, 1:N_down]'
 
     # --- SCF iterations ---
+    # following equ. 4.73 in thijssen's book
     for i = 1:maxiter
         P_total = P_up + P_down
 
         # Build Fock matrices
-        F_up = copy(H0)
-        F_down = copy(H0)
+        F_up = copy(H_core)
+        F_down = copy(H_core)
 
         # Coulomb (J)
         @ein! F_up[μ, ν] += P_total[λ, σ] * inter[μ, ν, λ, σ]
         @ein! F_down[μ, ν] += P_total[λ, σ] * inter[μ, ν, λ, σ]
 
         # Exchange (K) for alpha
-        @ein ex_F_up[μ, ν] := P_up[λ, σ] * inter[μ, σ, λ, ν]
+        @ein ex_F_up[μ, ν] := P_up[λ, σ] * inter[μ, λ, σ, ν]
         F_up .-= ex_F_up
 
         # Exchange (K) for beta
-        @ein ex_F_down[μ, ν] := P_down[λ, σ] * inter[μ, σ, λ, ν]
+        @ein ex_F_down[μ, ν] := P_down[λ, σ] * inter[μ, λ, σ, ν]
         F_down .-= ex_F_down
 
         # Solve and sort
@@ -126,41 +141,27 @@ function SCF(bset::BasisSet; n_unpaired::Int, maxiter = 100, tol = 1e-6)
         # Convergence
         if norm(P_up_new - P_up) + norm(P_down_new - P_down) < tol
             println("SCF converged in $i iterations.")
+            P_total_new = P_up_new + P_down_new
 
             # Energy calculation
             E_elec =
-                0.5 * (
-                    tr((P_up_new + P_down_new) * H0) +
-                    tr(P_up_new * F_up) +
-                    tr(P_down_new * F_down)
-                )
+                1 / 2 *
+                (tr(P_total_new * H_core) + tr(P_up_new * F_up) + tr(P_down_new * F_down))
 
-            E_nuc = 0.0
-            atoms = bset.mol.atoms
-            for i_atom = 1:length(atoms)
-                for j_atom = (i_atom+1):length(atoms)
-                    r_ij = norm(atoms[i_atom].xyz - atoms[j_atom].xyz)
-                    if r_ij > 1e-8 # Avoid self-interaction if atoms are at the same position
-                        E_nuc += atoms[i_atom].Z * atoms[j_atom].Z / r_ij
-                    end
-                end
-            end
-            E_total = E_elec + E_nuc
 
             return (
-                energy = E_total,
+                energy = E_elec,
                 P_up = P_up_new,
                 P_down = P_down_new,
                 C_up = C_up_new,
                 C_down = C_down_new,
-                E_up = evals_up,
-                E_down = evals_down,
             )
         end
 
-        # Update
-        P_up = P_up_new
-        P_down = P_down_new
+        # Hybrid Update
+        P_up_new = α * P_up_new + (1 - α) * P_up
+        P_down_new = α * P_down_new + (1 - α) * P_down
+
     end
 
     error("SCF did not converge in $maxiter iterations.")
