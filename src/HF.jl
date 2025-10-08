@@ -125,18 +125,24 @@ function SCF(
 
         # Solve and sort
         evals_up, C_up_new = eigen(F_up, S)
-        p_up = sortperm(evals_up)
+        p_up = sortperm(real(evals_up))
         evals_up = evals_up[p_up]
         C_up_new = C_up_new[:, p_up]
 
         evals_down, C_down_new = eigen(F_down, S)
-        p_down = sortperm(evals_down)
+        p_down = sortperm(real(evals_down))
         evals_down = evals_down[p_down]
         C_down_new = C_down_new[:, p_down]
 
         # New densities from occupied orbitals
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'
         P_down_new = C_down_new[:, 1:N_down] * C_down_new[:, 1:N_down]'
+
+        # P_total_new = P_up_new + P_down_new
+        # E_elec =
+        #     1 / 2 *
+        #     (tr(P_total_new * H_core) + tr(P_up_new * F_up) + tr(P_down_new * F_down))
+        # @show E_elec
 
         # Convergence
         if norm(P_up_new - P_up) + norm(P_down_new - P_down) < tol
