@@ -30,7 +30,7 @@ end
     init_conf(bset::BasisSet)
 
 Computes an initial guess for the molecular orbital coefficients by solving the one-electron problem (ignoring electron-electron repulsion). The resulting orbitals are sorted by energy.
-    
+
 """
 function init_conf(bset::BasisSet)
     # ignore electron repulsion first
@@ -55,7 +55,7 @@ end
 )
 
 Perform a Unrestricted Hartree-Fock (UHF) self-consistent field calculation.
-This is suitable for atoms or molecules, including open-shell systems. 
+This is suitable for atoms or molecules, including open-shell systems.
 
 In UHF the Fock matrix writes as:
 ```math
@@ -159,8 +159,8 @@ function SCF(
         end
 
         # Hybrid Update
-        P_up_new = α * P_up_new + (1 - α) * P_up
-        P_down_new = α * P_down_new + (1 - α) * P_down
+        P_up = α * P_up_new + (1 - α) * P_up
+        P_down = α * P_down_new + (1 - α) * P_down
 
     end
 
