@@ -1,7 +1,3 @@
-using GaussianBasis
-using LinearAlgebra
-using OMEinsum
-using Printf
 
 # compute under Hartree unit
 
