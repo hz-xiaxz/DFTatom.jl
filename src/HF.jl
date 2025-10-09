@@ -1,6 +1,7 @@
 using GaussianBasis
 using LinearAlgebra
 using OMEinsum
+using Printf
 
 # compute under Hartree unit
 
@@ -46,36 +47,29 @@ function init_conf(bset::BasisSet)
 end
 
 """
-    SCF(
-    bset::BasisSet;
-    N_up::Int,
-    N_down::Int,
-    maxiter::Int = 100,
-    tol::Float64 = 1e-6,
-)
+    SCF(...)
 
-Perform a Unrestricted Hartree-Fock (UHF) self-consistent field calculation.
-This is suitable for atoms or molecules, including open-shell systems.
+Perform an Unrestricted Hartree-Fock (UHF) self-consistent field calculation.
 
-In UHF the Fock matrix writes as:
+The UHF equations are solved:
 ```math
-F^α = H_core + J - K^α \\
-
-F^β = H_core + J - K^β
+F^α C^α = S C^α E^α \
+F^β C^β = S C^β E^β
 ```
-where
-```math
-J = ∑_{i=1}^{N_α} J_i^α + ∑_{j=1}^{N_β} J_j^β \\
-```
+where ``F^α = H_{core} + J - K^α`` and ``F^β = H_{core} + J - K^β`.
 
 # Arguments
 - `bset::BasisSet`: The basis set for the atom.
 - `N_up::Int`: The number of spin-up electrons.
 - `N_down::Int`: The number of spin-down electrons.
-- `maxiter::Int`: Maximum number of SCF iterations.
-- `tol::Float64`: Convergence tolerance for the density matrix.
 
+# Keyword Arguments
+- `maxiter::Int = 100`: Maximum number of SCF iterations.
+- `α::Float64 = 0.8`: Mixing parameter for density updates.
+- `tol::Float64 = 1e-6`: Convergence tolerance for the density matrix.
 
+# Returns
+A tuple containing the total energy, density matrices, and orbital coefficients.
 """
 function SCF(
     bset::BasisSet;
@@ -102,8 +96,10 @@ function SCF(
     P_up = C_up[:, 1:N_up] * C_up[:, 1:N_up]'
     P_down = C_down[:, 1:N_down] * C_down[:, 1:N_down]'
 
+    @printf "Starting UHF-SCF calculation with %d basis functions.\n" bset.nbas
+    @printf "N_up = %d, N_down = %d\n" N_up N_down
+
     # --- SCF iterations ---
-    # following equ. 4.73 in thijssen's book
     for i = 1:maxiter
         P_total = P_up + P_down
 
@@ -125,29 +121,21 @@ function SCF(
 
         # Solve and sort
         evals_up, C_up_new = eigen(F_up, S)
-
         evals_down, C_down_new = eigen(F_down, S)
 
         # New densities from occupied orbitals
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'
         P_down_new = C_down_new[:, 1:N_down] * C_down_new[:, 1:N_down]'
 
-        # P_total_new = P_up_new + P_down_new
-        # E_elec =
-        #     1 / 2 *
-        #     (tr(P_total_new * H_core) + tr(P_up_new * F_up) + tr(P_down_new * F_down))
-        # @show E_elec
-
-        # Convergence
+        # Convergence Check
         if norm(P_up_new - P_up) + norm(P_down_new - P_down) < tol
-            println("SCF converged in $i iterations.")
-            P_total_new = P_up_new + P_down_new
+            @printf "SCF converged in %d iterations.\n" i
 
+            P_total_new = P_up_new + P_down_new
             # Energy calculation
             E_elec =
-                1 / 2 *
+                0.5 *
                 (tr(P_total_new * H_core) + tr(P_up_new * F_up) + tr(P_down_new * F_down))
-
 
             return (
                 energy = E_elec,
@@ -158,10 +146,10 @@ function SCF(
             )
         end
 
-        # Hybrid Update
+        # DIIS mixing could be implemented here for better convergence
+        # For now, simple linear mixing
         P_up = α * P_up_new + (1 - α) * P_up
         P_down = α * P_down_new + (1 - α) * P_down
-
     end
 
     error("SCF did not converge in $maxiter iterations.")

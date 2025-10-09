@@ -1,17 +1,19 @@
 name = "DFTatom"
 uuid = "8ebd6edd-a49d-5d0c-9d48-1c79bf3d73a4"
-version = "0.1.0"
 authors = ["Xuanzhe Xia", " xzxia22@m.fudan.edu.cn"]
+version = "0.1.0"
 
 [deps]
 GaussianBasis = "9bb1a3dc-0d1c-467e-84f5-0c4ef701360a"
 Infiltrator = "5903a43b-9cc3-4c30-8d17-598619ec4e9b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OMEinsum = "ebe7aa44-baf0-506c-a96f-8464559b3922"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 GaussianBasis = "0.5.1"
 Infiltrator = "1.9.3"
 LinearAlgebra = "1.11.0"
 OMEinsum = "0.9.2"
+Printf = "1.11.0"
 julia = "1.10"
