@@ -13,7 +13,7 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 SphericalHarmonics = "c489a379-e885-57ff-9236-bd896d33c250"
 
 [compat]
-GaussianBasis = "0.5.1"
+GaussianBasis = "0.5.1, 0.6"
 Infiltrator = "1.9.3"
 Lebedev = "1.2.0"
 LinearAlgebra = "1.11.0"
