@@ -5,6 +5,9 @@ using Printf
 using SphericalHarmonics
 using Lebedev
 
+# Include shared Aufbau selection functions
+include("AufbauSelection.jl")
+
 """
     LSDA_xc(rho_a::Float64, rho_b::Float64)
 
@@ -152,9 +155,16 @@ Perform a Kohn-Sham Self-Consistent Field calculation using LSDA.
 - `maxiter::Int`: Maximum number of SCF iterations.
 - `α::Float64`: Mixing parameter for density updates.
 - `tol::Float64`: Convergence tolerance.
+- `use_aufbau::Bool`: Use Aufbau principle with symmetry breaking for INITIAL GUESS only.
+- `favor_high_m::Bool`: If use_aufbau=true, controls symmetry breaking direction for initial guess.
 
 # Returns
 A tuple containing the total energy, density matrices, and orbital coefficients.
+
+# Notes
+The `use_aufbau` parameter only affects the initial guess. During SCF iterations, orbitals are
+occupied by energy order to ensure stable convergence. The initial Aufbau guess breaks symmetry,
+which is then maintained by the SCF procedure.
 """
 function KS_SCF(
     bset::BasisSet;
@@ -163,10 +173,15 @@ function KS_SCF(
     maxiter::Int = 100,
     α::Float64 = 0.5,
     tol::Float64 = 1e-6,
+    use_aufbau::Bool = false,
+    favor_high_m::Bool = true,
 )
     grid_points, grid_weights = get_integration_grid()
     n_grid = length(grid_weights)
     n_basis = bset.nbas
+
+    # Get angular momentum quantum numbers for each basis function
+    l_values, m_values = get_basis_angular_momentum(bset)
 
     T0 = kinetic(bset)
     nuc = nuclear(bset)
@@ -174,7 +189,8 @@ function KS_SCF(
     S = overlap(bset)
     inter = ERI_2e4c(bset)
 
-    C = init_conf(bset)
+    # Initial guess orbitals with Aufbau if requested
+    C = init_conf(bset; N_up=N_up, N_down=N_down, use_aufbau=use_aufbau, favor_high_m=favor_high_m)
     C_up = copy(C)
     C_down = copy(C)
 
@@ -184,6 +200,22 @@ function KS_SCF(
     phi_on_grid = zeros(n_grid, n_basis)
     for i = 1:n_grid
         phi_on_grid[i, :] = evaluate_basis(bset, grid_points[:, i])
+    end
+
+    # Create symmetry-breaking potential if using Aufbau
+    # This maintains the desired orbital occupation throughout SCF
+    V_symbreak = zeros(n_basis, n_basis)
+    if use_aufbau
+        for μ = 1:n_basis
+            # Lower the energy of favored basis functions
+            if favor_high_m
+                # Favor high |m| (px, py): lower their diagonal elements
+                V_symbreak[μ, μ] = -0.001 * abs(m_values[μ])
+            else
+                # Favor low |m| (pz): lower m=0 elements
+                V_symbreak[μ, μ] = -0.001 * (1.0 - abs(m_values[μ]))
+            end
+        end
     end
 
     for iter = 1:maxiter
@@ -197,43 +229,26 @@ function KS_SCF(
         v_xc_up_on_grid = zeros(n_grid)
         v_xc_down_on_grid = zeros(n_grid)
         E_xc = 0.0
-        v_pert = [
-            1e-4 * (grid_points[1, i] + 1.1 * grid_points[2, i] + 1.2 * grid_points[3, i]) for
-            i = 1:n_grid
-        ]
         for i = 1:n_grid
             eps_xc, v_xc_up, v_xc_down = LSDA_xc(rho_up_on_grid[i], rho_down_on_grid[i])
-            v_xc_up_on_grid[i] = v_xc_up + v_pert[i]
-            v_xc_down_on_grid[i] = v_xc_down + v_pert[i]
+            v_xc_up_on_grid[i] = v_xc_up 
+            v_xc_down_on_grid[i] = v_xc_down 
             rho_total_on_grid = rho_up_on_grid[i] + rho_down_on_grid[i]
             E_xc += eps_xc * rho_total_on_grid * grid_weights[i]
         end
         V_xc_up = phi_on_grid' * Diagonal(grid_weights .* v_xc_up_on_grid) * phi_on_grid
         V_xc_down = phi_on_grid' * Diagonal(grid_weights .* v_xc_down_on_grid) * phi_on_grid
 
-        F_up = H_core + J + V_xc_up
-        F_down = H_core + J + V_xc_down
+        # Add symmetry-breaking potential to maintain orbital occupation
+        F_up = H_core + J + V_xc_up + V_symbreak
+        F_down = H_core + J + V_xc_down + V_symbreak
 
-        evals_up, C_up_new = eigen(F_up, S)
-        @show evals_up[1:5]
+        evals_up, C_up_new = eigen(Symmetric(F_up), Symmetric(S))
         evals_down, C_down_new = eigen(Symmetric(F_down), Symmetric(S))
 
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'
         P_down_new = C_down_new[:, 1:N_down] * C_down_new[:, 1:N_down]'
 
-        P_total_new = P_up_new + P_down_new
-        E_h = 0.5 * tr(P_total_new * J)
-        E_one_electron = tr(P_total_new * H_core)
-        E_total = E_one_electron + E_h + E_xc
-        # @show E_total
-        diff_up = norm(P_up_new - P_up)
-        diff_down = norm(P_down_new - P_down)
-        @printf(
-            "Iter %d: Energy = %.10f, DeltaP = %.2e\n",
-            iter,
-            E_total,
-            diff_up + diff_down
-        )
         if norm(P_up_new - P_up) + norm(P_down_new - P_down) < tol
             @printf "SCF converged in %d iterations.\n" iter
             P_total_new = P_up_new + P_down_new
@@ -277,10 +292,10 @@ end
 """
     run_lda_c()
 
-Run LSDA calculation for Carbon atom.
+Run LSDA calculation for Carbon atom (triplet ground state).
 """
 function run_lda_c()
-    bset = BasisSet("sto-3g", "C 0.0 0.0 0.0")
+    bset = BasisSet("sto-6g", "C 0.0 0.0 0.0")
     # Carbon: 1s^2 2s^2 2p^2. N=6. Ground state is triplet (^3P).
     res = KS_SCF(bset; N_up = 4, N_down = 2)
     @printf "C atom energy: %.6f Hartree\n" res.energy
