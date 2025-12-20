@@ -1,6 +1,9 @@
 
 # compute under Hartree unit
 
+# Include shared Aufbau selection functions
+include("AufbauSelection.jl")
+
 """
     one_electron_energy(bset::BasisSet)
 
@@ -24,21 +27,47 @@ function one_electron_energy(bset::BasisSet)
 end
 
 """
-    init_conf(bset::BasisSet)
+    init_conf(bset::BasisSet; N_up::Int=0, N_down::Int=0, use_aufbau::Bool=false, favor_high_m::Bool=true)
 
-Computes an initial guess for the molecular orbital coefficients by solving the one-electron problem (ignoring electron-electron repulsion). The resulting orbitals are sorted by energy.
+Computes an initial guess for the molecular orbital coefficients by solving the one-electron
+problem (ignoring electron-electron repulsion).
 
+# Arguments
+- `bset::BasisSet`: The basis set.
+
+# Keyword Arguments
+- `N_up::Int`: Number of spin-up electrons (only used if use_aufbau=true).
+- `N_down::Int`: Number of spin-down electrons (only used if use_aufbau=true).
+- `use_aufbau::Bool`: Use Aufbau principle with symmetry breaking.
+- `favor_high_m::Bool`: If use_aufbau=true, controls symmetry breaking direction.
+
+# Returns
+- Molecular orbital coefficient matrix, with orbitals ordered by energy (or by Aufbau if requested).
 """
-function init_conf(bset::BasisSet)
+function init_conf(bset::BasisSet; N_up::Int=0, N_down::Int=0, use_aufbau::Bool=false, favor_high_m::Bool=true)
     # ignore electron repulsion first
     T = kinetic(bset)
     nuc = nuclear(bset)
     H0 = T + nuc
     S = overlap(bset)
-    evals, evecs = eigen(H0, S)
-    p = sortperm(evals)
-    C = evecs[:, p] # For Carbon, px, py, pz orbitals are degenerate
-    # return the configuration without interaction
+    evals, evecs = eigen(Symmetric(H0), Symmetric(S))
+
+    if use_aufbau && N_up > 0
+        # Use Aufbau principle to reorder orbitals for better initial guess
+        l_values, m_values = get_basis_angular_momentum(bset)
+        # Reorder all orbitals by Aufbau for the dominant spin channel
+        N_occ = max(N_up, N_down)
+        occ_indices = select_orbitals_aufbau(evecs, evals, l_values, m_values, N_occ; favor_high_m=favor_high_m)
+
+        # Build reordered coefficient matrix: occupied first, then rest
+        n_basis = bset.nbas
+        remaining_indices = setdiff(1:n_basis, occ_indices)
+        all_indices = [occ_indices; remaining_indices]
+        C = evecs[:, all_indices]
+    else
+        C = evecs
+    end
+
     return C
 end
 
@@ -63,6 +92,8 @@ where ``F^α = H_{core} + J - K^α`` and ``F^β = H_{core} + J - K^β`.
 - `maxiter::Int = 100`: Maximum number of SCF iterations.
 - `α::Float64 = 0.8`: Mixing parameter for density updates.
 - `tol::Float64 = 1e-6`: Convergence tolerance for the density matrix.
+- `use_aufbau::Bool = false`: Use Aufbau principle with symmetry breaking for orbital selection.
+- `favor_high_m::Bool = true`: If use_aufbau=true, controls symmetry breaking direction.
 
 # Returns
 A tuple containing the total energy, density matrices, and orbital coefficients.
@@ -74,6 +105,8 @@ function SCF(
     maxiter::Int = 100,
     α::Float64 = 0.8, # mixing parameter
     tol::Float64 = 1e-6,
+    use_aufbau::Bool = false,
+    favor_high_m::Bool = true,
 )
 
     # Core Hamiltonian (constant)
@@ -83,8 +116,11 @@ function SCF(
     S = overlap(bset)
     inter = ERI_2e4c(bset)
 
-    # Initial guess orbitals
-    C = init_conf(bset)
+    # Get angular momentum quantum numbers for each basis function
+    l_values, m_values = get_basis_angular_momentum(bset)
+
+    # Initial guess orbitals with Aufbau if requested
+    C = init_conf(bset; N_up=N_up, N_down=N_down, use_aufbau=use_aufbau, favor_high_m=favor_high_m)
     C_up = copy(C)
     C_down = copy(C)
 
@@ -138,6 +174,8 @@ function SCF(
                 P_down = P_down_new,
                 C_up = C_up_new,
                 C_down = C_down_new,
+                evals_up = evals_up,
+                evals_down = evals_down,
             )
         end
 

@@ -6,6 +6,7 @@ using OMEinsum
 using Printf
 
 include("AufbauSelection.jl")
+export get_basis_angular_momentum
 include("HF.jl")
 export init_conf, SCF
 include("LDA.jl")
