@@ -5,9 +5,6 @@ using Printf
 using SphericalHarmonics
 using Lebedev
 
-# Include shared Aufbau selection functions
-include("AufbauSelection.jl")
-
 """
     LSDA_xc(rho_a::Float64, rho_b::Float64)
 

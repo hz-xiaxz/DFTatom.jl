@@ -1,7 +1,7 @@
 name = "DFTatom"
 uuid = "8ebd6edd-a49d-5d0c-9d48-1c79bf3d73a4"
-authors = ["Xuanzhe Xia", " xzxia22@m.fudan.edu.cn"]
 version = "0.1.0"
+authors = ["Xuanzhe Xia", " xzxia22@m.fudan.edu.cn"]
 
 [deps]
 GaussianBasis = "9bb1a3dc-0d1c-467e-84f5-0c4ef701360a"

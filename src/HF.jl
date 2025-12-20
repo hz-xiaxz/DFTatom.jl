@@ -1,9 +1,6 @@
 
 # compute under Hartree unit
 
-# Include shared Aufbau selection functions
-include("AufbauSelection.jl")
-
 """
     one_electron_energy(bset::BasisSet)
 
