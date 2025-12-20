@@ -53,7 +53,7 @@ It combines a logarithmic radial grid with a Lebedev angular grid.
 - `points`: A 3xN array of grid point coordinates.
 - `weights`: A vector of N integration weights.
 """
-function get_integration_grid(; n_rad::Int = 100, n_ang_order::Int = 23)
+function get_integration_grid(; n_rad::Int = 500, n_ang_order::Int = 23)
     # 1. Radial Grid (logarithmic)
     rad_pts = exp.(range(-5, stop = 3, length = n_rad))
     rad_weights = zeros(n_rad)
@@ -197,22 +197,25 @@ function KS_SCF(
         v_xc_up_on_grid = zeros(n_grid)
         v_xc_down_on_grid = zeros(n_grid)
         E_xc = 0.0
-
+        v_pert = [
+            1e-4 * (grid_points[1, i] + 1.1 * grid_points[2, i] + 1.2 * grid_points[3, i]) for
+            i = 1:n_grid
+        ]
         for i = 1:n_grid
             eps_xc, v_xc_up, v_xc_down = LSDA_xc(rho_up_on_grid[i], rho_down_on_grid[i])
-            v_xc_up_on_grid[i] = v_xc_up
-            v_xc_down_on_grid[i] = v_xc_down
+            v_xc_up_on_grid[i] = v_xc_up + v_pert[i]
+            v_xc_down_on_grid[i] = v_xc_down + v_pert[i]
             rho_total_on_grid = rho_up_on_grid[i] + rho_down_on_grid[i]
             E_xc += eps_xc * rho_total_on_grid * grid_weights[i]
         end
-
         V_xc_up = phi_on_grid' * Diagonal(grid_weights .* v_xc_up_on_grid) * phi_on_grid
         V_xc_down = phi_on_grid' * Diagonal(grid_weights .* v_xc_down_on_grid) * phi_on_grid
 
         F_up = H_core + J + V_xc_up
         F_down = H_core + J + V_xc_down
 
-        evals_up, C_up_new = eigen(Symmetric(F_up), Symmetric(S))
+        evals_up, C_up_new = eigen(F_up, S)
+        @show evals_up[1:5]
         evals_down, C_down_new = eigen(Symmetric(F_down), Symmetric(S))
 
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'
@@ -222,7 +225,15 @@ function KS_SCF(
         E_h = 0.5 * tr(P_total_new * J)
         E_one_electron = tr(P_total_new * H_core)
         E_total = E_one_electron + E_h + E_xc
-        @show E_total
+        # @show E_total
+        diff_up = norm(P_up_new - P_up)
+        diff_down = norm(P_down_new - P_down)
+        @printf(
+            "Iter %d: Energy = %.10f, DeltaP = %.2e\n",
+            iter,
+            E_total,
+            diff_up + diff_down
+        )
         if norm(P_up_new - P_up) + norm(P_down_new - P_down) < tol
             @printf "SCF converged in %d iterations.\n" iter
             P_total_new = P_up_new + P_down_new
