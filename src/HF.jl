@@ -115,9 +115,8 @@ function SCF(
         @ein ex_F_down[μ, ν] := P_down[λ, σ] * inter[μ, λ, σ, ν]
         F_down .-= ex_F_down
 
-        # Solve and sort
-        evals_up, C_up_new = eigen(F_up, S)
-        evals_down, C_down_new = eigen(F_down, S)
+        evals_up, C_up_new = eigen(Symmetric(F_up), Symmetric(S))
+        evals_down, C_down_new = eigen(Symmetric(F_down), Symmetric(S))
 
         # New densities from occupied orbitals
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'

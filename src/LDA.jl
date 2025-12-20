@@ -212,8 +212,8 @@ function KS_SCF(
         F_up = H_core + J + V_xc_up
         F_down = H_core + J + V_xc_down
 
-        evals_up, C_up_new = eigen(F_up, S)
-        evals_down, C_down_new = eigen(F_down, S)
+        evals_up, C_up_new = eigen(Symmetric(F_up), Symmetric(S))
+        evals_down, C_down_new = eigen(Symmetric(F_down), Symmetric(S))
 
         P_up_new = C_up_new[:, 1:N_up] * C_up_new[:, 1:N_up]'
         P_down_new = C_down_new[:, 1:N_down] * C_down_new[:, 1:N_down]'
