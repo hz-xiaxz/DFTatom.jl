@@ -1,0 +1,52 @@
+
+======================================================================
+LSDA Orbital Analysis
+======================================================================
+
+Total Energy: -37.0939828460 Hartree
+
+--- Spin-Up (α) Orbitals ---
+Orbital   Label      Energy (Hartree)   Occupation
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  1       1s              -9.83617808      ●  (occ)
+  2       2s              -0.47514443      ●  (occ)
+  3       2p_z            -0.17154385      ●  (occ)
+  4       2p_y            -0.17117758      ●  (occ)
+  5       2p_x            -0.15519253      ○  (LUMO)
+  6       3p_z             0.49146468      ○  (virt)
+  7       3p_y             0.49325646      ○  (virt)
+
+--- Spin-Down (β) Orbitals ---
+Orbital   Label      Energy (Hartree)   Occupation
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  1       1s              -9.79938159      ●  (occ)
+  2       2s              -0.34797256      ●  (occ)
+  3       2p_x            -0.07863987      ○  (LUMO)
+  4       2p_z            -0.03298987      ○  (virt)
+  5       2p_y            -0.02979002      ○  (virt)
+
+======================================================================
+
+
+Key Orbital Wavefunctions:
+======================================================================
+
+--- Orbital 4 (α-spin) Wavefunction Coefficients ---
+Basis Function            Coefficient
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  p_y                      0.650373
+  p_y                      0.474624
+
+--- Orbital 5 (α-spin) Wavefunction Coefficients ---
+Basis Function            Coefficient
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  p_x                      0.638370
+  p_x                      0.487621
+
+--- Orbital 2 (β-spin) Wavefunction Coefficients ---
+Basis Function            Coefficient
+-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  s                       -0.231843
+  s                        0.417562
+  s                        0.653121
+  d_0                      0.022199
