@@ -2,6 +2,7 @@
 
 using Printf
 using LinearAlgebra
+using GaussianBasis
 using DFTatom
 
 """
@@ -20,7 +21,7 @@ function assign_orbital_labels(bset::BasisSet, C::Matrix, n_orbitals::Int)
     labels = []
 
     # Get basis function quantum numbers
-    l_values, m_values = DFTatom.get_basis_angular_momentum(bset)
+    l_values, m_values = get_basis_angular_momentum(bset)
 
     # Track how many orbitals of each l type we've assigned (regardless of m)
     l_count = Dict{Int,Int}(0 => 0, 1 => 0, 2 => 0, 3 => 0)

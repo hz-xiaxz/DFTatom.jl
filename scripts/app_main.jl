@@ -1,17 +1,10 @@
-module DFTatom
-
+# Entry point for standalone app
+using DFTatom
 using GaussianBasis
-using LinearAlgebra
-using OMEinsum
 using Printf
 
-include("AufbauSelection.jl")
-export get_basis_angular_momentum, select_orbitals_aufbau
-include("HF.jl")
-export init_conf, SCF
-include("LDA.jl")
-export KS_SCF, run_lda_c, run_lda_he
-include("OrbitalAnalysis.jl")
+# Include orbital analysis utilities
+include(joinpath(@__DIR__, "OrbitalAnalysis.jl"))
 
 function julia_main()::Cint
     try
@@ -36,7 +29,7 @@ function julia_main()::Cint
         println("-"^80)
 
         bset_H = BasisSet("6-31g_st_", "H 0.0 0.0 0.0")
-        result_H_HF = SCF(bset_H; N_up=1, N_down=0, maxiter=100, α=0.8)
+        result_H_HF = DFTatom.SCF(bset_H; N_up=1, N_down=0, maxiter=100, α=0.8)
 
         print_orbital_analysis(bset_H, result_H_HF, "UHF"; N_up=1, N_down=0)
 
@@ -67,7 +60,7 @@ function julia_main()::Cint
         println("-"^80)
 
         bset_C = BasisSet("6-31g_st_", "C 0.0 0.0 0.0")
-        result_C_HF = SCF(
+        result_C_HF = DFTatom.SCF(
             bset_C;
             N_up=4,
             N_down=2,
@@ -84,7 +77,7 @@ function julia_main()::Cint
         println("  Method: DFT with Local Spin Density Approximation (LSDA)")
         println("-"^80)
 
-        result_C_LDA = KS_SCF(
+        result_C_LDA = DFTatom.KS_SCF(
             bset_C;
             N_up=4,
             N_down=2,
@@ -134,6 +127,4 @@ function julia_main()::Cint
         Base.show_backtrace(stderr, catch_backtrace())
         return 1  # Error
     end
-end
-
 end
