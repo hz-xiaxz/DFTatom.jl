@@ -10,4 +10,3 @@ coverage
 docs/build/
 env
 node_modules
-build*/

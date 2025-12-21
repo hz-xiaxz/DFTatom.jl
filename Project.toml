@@ -1,7 +1,7 @@
 name = "DFTatom"
 uuid = "8ebd6edd-a49d-5d0c-9d48-1c79bf3d73a4"
-authors = ["Xuanzhe Xia", " xzxia22@m.fudan.edu.cn"]
 version = "0.1.0"
+authors = ["Xuanzhe Xia", " xzxia22@m.fudan.edu.cn"]
 
 [deps]
 GaussianBasis = "9bb1a3dc-0d1c-467e-84f5-0c4ef701360a"
@@ -19,5 +19,5 @@ Lebedev = "1.2.0"
 LinearAlgebra = "1.11.0"
 OMEinsum = "0.9.2"
 Printf = "1.11.0"
-SphericalHarmonics = "0.1.20"
+SphericalHarmonics = "0.1.16"
 julia = "1.10"
